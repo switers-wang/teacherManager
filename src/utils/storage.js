@@ -46,11 +46,11 @@ export async function registerUser(user) {
   return true;
 }
 
-export async function loginUser({ role, studentId, teacherId, password }) {
+export async function loginUser({ role, username, password }) {
   const users = await getUsers();
   if (role === 'student') {
-    return users.find(u => u.role === 'student' && u.username === studentId && u.password === password) || null;
+    return users.find(u => u.role === 'student' && u.username === username && u.password === password) || null;
   } else {
-    return users.find(u => u.role === 'teacher' && u.username === teacherId && u.password === password) || null;
+    return users.find(u => u.role === 'teacher' && u.username === username && u.password === password) || null;
   }
 } 

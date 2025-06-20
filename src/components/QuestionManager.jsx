@@ -1,17 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Table, Button, Popconfirm, Tag } from 'antd';
-import { getQuestions, removeQuestion } from '../utils/storage';
+import { removeQuestion } from '../utils/storage';
 
-export default function QuestionManager() {
-  const [questions, setQuestions] = useState([]);
-
-  useEffect(() => {
-    getQuestions().then(setQuestions);
-  }, []);
-
+export default function QuestionManager({ questions, onDelete }) {
   const handleDelete = async (id) => {
     await removeQuestion(id);
-    setQuestions(await getQuestions());
+    onDelete && onDelete();
   };
 
   const columns = [

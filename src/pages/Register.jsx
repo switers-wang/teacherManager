@@ -23,7 +23,7 @@ export default function Register() {
     if (values.role === 'student') {
       user = {
         role: 'student',
-        username: values.studentId,
+        username: values.username,
         name: values.studentName,
         class: values.studentClass,
         major: values.studentMajor,
@@ -32,7 +32,7 @@ export default function Register() {
     } else {
       user = {
         role: 'teacher',
-        username: values.teacherId,
+        username: values.username,
         name: values.teacherName,
         college: values.teacherCollege,
         password: values.password,
@@ -52,22 +52,24 @@ export default function Register() {
     <Card style={{ maxWidth: 500, margin: '40px auto' }}>
       <h2 style={{ textAlign: 'center' }}>用户注册</h2>
       <Form key={role} form={form} layout="vertical" onFinish={onFinish} initialValues={{ role }} autoComplete="off" validateTrigger="onChange" onValuesChange={(changed, all) => { console.log('Register form values:', all); }}>
-        <Form.Item label="角色" name="role" rules={[{ required: true, message: '请选择角色' }]}> <Select onChange={handleRoleChange}> <Option value="student">学生</Option> <Option value="teacher">教师</Option> </Select> </Form.Item>
+        <Form.Item label="角色" name="role" rules={[{ required: true, message: '请选择角色' }]}><Select onChange={handleRoleChange}><Option value="student">学生</Option><Option value="teacher">教师</Option></Select></Form.Item>
         {role === 'student' ? (
           <>
-            <Form.Item label="学号" name="studentId" rules={[{ required: true, message: '请输入学号' }]}> <Input autoComplete="off" /> </Form.Item>
-            <Form.Item label="姓名" name="studentName" rules={[{ required: true, message: '请输入姓名' }]}> <Input autoComplete="off" /> </Form.Item>
-            <Form.Item label="班级" name="studentClass" rules={[{ required: true, message: '请输入班级' }]}> <Input autoComplete="off" /> </Form.Item>
-            <Form.Item label="专业" name="studentMajor" rules={[{ required: true, message: '请输入专业' }]}> <Input autoComplete="off" /> </Form.Item>
+            <Form.Item label="用户名" name="username" rules={[{ required: true, message: '请输入用户名' }]}><Input autoComplete="off" /></Form.Item>
+            <Form.Item label="学号" name="studentId" rules={[{ required: true, message: '请输入学号' }]}><Input autoComplete="off" /></Form.Item>
+            <Form.Item label="姓名" name="studentName" rules={[{ required: true, message: '请输入姓名' }]}><Input autoComplete="off" /></Form.Item>
+            <Form.Item label="班级" name="studentClass" rules={[{ required: true, message: '请输入班级' }]}><Input autoComplete="off" /></Form.Item>
+            <Form.Item label="专业" name="studentMajor" rules={[{ required: true, message: '请输入专业' }]}><Input autoComplete="off" /></Form.Item>
           </>
         ) : (
           <>
-            <Form.Item label="工号" name="teacherId" rules={[{ required: true, message: '请输入工号' }]}> <Input autoComplete="off" /> </Form.Item>
-            <Form.Item label="姓名" name="teacherName" rules={[{ required: true, message: '请输入姓名' }]}> <Input autoComplete="off" /> </Form.Item>
-            <Form.Item label="所属学院" name="teacherCollege" rules={[{ required: true, message: '请输入所属学院' }]}> <Input autoComplete="off" /> </Form.Item>
+            <Form.Item label="用户名" name="username" rules={[{ required: true, message: '请输入用户名' }]}><Input autoComplete="off" /></Form.Item>
+            <Form.Item label="教职工号" name="teacherId" rules={[{ required: true, message: '请输入工号' }]}><Input autoComplete="off" /></Form.Item>
+            <Form.Item label="姓名" name="teacherName" rules={[{ required: true, message: '请输入姓名' }]}><Input autoComplete="off" /></Form.Item>
+            <Form.Item label="所属学院" name="teacherCollege" rules={[{ required: true, message: '请输入所属学院' }]}><Input autoComplete="off" /></Form.Item>
           </>
         )}
-        <Form.Item label="密码" name="password" rules={[{ required: true, message: '请输入密码' }]}> <Input.Password autoComplete="new-password" /> </Form.Item>
+        <Form.Item label="密码" name="password" rules={[{ required: true, message: '请输入密码' }]}><Input.Password autoComplete="new-password" /></Form.Item>
         <Form.Item>
           <Button type="primary" htmlType="submit" block loading={loading}>注册</Button>
         </Form.Item>

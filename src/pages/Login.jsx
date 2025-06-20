@@ -36,9 +36,9 @@ export default function Login() {
         validateTrigger="onChange"
         onValuesChange={(changed, all) => { console.log('Login form values:', all); }}
       >
-        <Form.Item label="角色" name="role" rules={[{ required: true, message: '请选择角色' }]}> <Select> <Option value="student">学生</Option> <Option value="teacher">教师</Option> </Select> </Form.Item>
-        <Form.Item label="账号" name="username" rules={[{ required: true, message: '请输入账号' }]}> <Input autoComplete="username" /> </Form.Item>
-        <Form.Item label="密码" name="password" rules={[{ required: true, message: '请输入密码' }]}> <Input.Password autoComplete="current-password" /> </Form.Item>
+        <Form.Item label="角色" name="role" rules={[{ required: true, message: '请选择角色' }]}><Select><Option value="student">学生</Option><Option value="teacher">教师</Option></Select></Form.Item>
+        <Form.Item label="账号" name="username" rules={[{ required: true, message: '请输入账号' }]}><Input autoComplete="username" /></Form.Item>
+        <Form.Item label="密码" name="password" rules={[{ required: true, message: '请输入密码' }]}><Input.Password autoComplete="current-password" /></Form.Item>
         <Form.Item>
           <Button type="primary" htmlType="submit" block loading={loading}>登录</Button>
         </Form.Item>
