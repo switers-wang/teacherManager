@@ -29,9 +29,21 @@ export default function QuestionManager({ questions, onDelete, onUpdate }) {
     // 设置表单初始值
     if (record.type === 'single' || record.type === 'multiple') {
       setEditOptions(Array.isArray(record.options) ? record.options : record.options.split(','));
+      
+      // 处理答案格式：如果是数组，转换为字符串
+      let answerValue = record.answer;
+      if (Array.isArray(record.answer)) {
+        if (record.type === 'single') {
+          answerValue = record.answer[0] || '';
+        } else {
+          answerValue = record.answer.join(',');
+        }
+      }
+      
       editForm.setFieldsValue({
         question: record.question,
-        answer: record.answer,
+        answer: answerValue,
+        score: record.score || 100,
         options: Array.isArray(record.options) ? record.options : record.options.split(',')
       });
     } else if (record.type === 'code') {
@@ -42,7 +54,8 @@ export default function QuestionManager({ questions, onDelete, onUpdate }) {
         outputType: 'number' 
       }]);
       editForm.setFieldsValue({
-        question: record.question
+        question: record.question,
+        score: record.score || 100
       });
     }
     
@@ -100,6 +113,7 @@ export default function QuestionManager({ questions, onDelete, onUpdate }) {
   const columns = [
     { title: '题目类型', dataIndex: 'type', key: 'type', render: t => t === 'single' ? <Tag color="blue">单选</Tag> : t === 'multiple' ? <Tag color="green">多选</Tag> : <Tag color="orange">编程</Tag> },
     { title: '题干', dataIndex: 'question', key: 'question', ellipsis: true },
+    { title: '分数', dataIndex: 'score', key: 'score', width: 80, render: score => <Tag color="blue">{score || 100}分</Tag> },
     { title: '操作', key: 'action', render: (_, record) => (
       <Space>
         <Button type="primary" size="small" onClick={() => handleEdit(record)}>编辑</Button>
@@ -133,6 +147,15 @@ export default function QuestionManager({ questions, onDelete, onUpdate }) {
           
           <Form.Item label="题干" name="question" rules={[{ required: true, message: '请输入题干' }]}>
             <Input.TextArea rows={2} />
+          </Form.Item>
+          
+          <Form.Item 
+            label="题目分数" 
+            name="score" 
+            rules={[{ required: true, message: '请输入题目分数' }]}
+            initialValue={editingQuestion?.score || 100}
+          >
+            <Input type="number" min={1} max={100} placeholder="请输入题目分数" />
           </Form.Item>
           
           {(editType === 'single' || editType === 'multiple') && (

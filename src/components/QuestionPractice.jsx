@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Button, Radio, Checkbox, message, Input, Select, Space, Progress, Table, Tag } from 'antd';
-import { getQuestions } from '../utils/storage';
+import { getQuestions, saveAnswerRecord, getAnswerRecords } from '../utils/storage';
 import CodeEditor from './CodeEditor';
 
 const { Option } = Select;
@@ -18,9 +18,31 @@ export default function QuestionPractice() {
   const [testResult, setTestResult] = useState(null);
   const [scores, setScores] = useState({}); // { [qid]: 分数 }
   const [showDetail, setShowDetail] = useState(false);
+  const [currentStudent, setCurrentStudent] = useState(null);
+  const [answerRecords, setAnswerRecords] = useState([]); // 存储答题记录
 
   useEffect(() => {
-    getQuestions().then(qs => setQuestions(qs));
+    const loadData = async () => {
+      const [qs, records] = await Promise.all([
+        getQuestions(),
+        getAnswerRecords()
+      ]);
+      setQuestions(qs);
+      setAnswerRecords(records);
+      console.log('加载的答题记录:', records);
+      
+      // 获取当前登录的学生信息
+      const studentInfo = JSON.parse(localStorage.getItem('tm_user'));
+      console.log('当前用户信息:', studentInfo);
+      if (studentInfo && studentInfo.role === 'student') {
+        setCurrentStudent(studentInfo);
+        console.log('设置当前学生:', studentInfo);
+      } else {
+        console.warn('未找到有效的学生用户信息');
+      }
+    };
+    
+    loadData();
   }, []);
 
   useEffect(() => {
@@ -82,6 +104,12 @@ export default function QuestionPractice() {
   };
 
   const handleSubmit = async () => {
+    // 检查当前学生信息
+    if (!currentStudent) {
+      message.error('未找到学生信息，请重新登录');
+      return;
+    }
+
     // 合法性校验
     if (q.type === 'single') {
       // 单选题校验
@@ -125,13 +153,16 @@ export default function QuestionPractice() {
     
     let currentScore = 0;
     
+    // 获取题目分数，默认为100分
+    const questionScore = q.score || 100;
+    
     // 判断当前题目的对错
     if (q.type === 'single') {
       // 单选题：直接比较字母答案
       const userAnswer = answer ? answer.toUpperCase() : '';
       const correctAnswer = q.answer[0]; // 标准答案（字母）
       console.log('单选题判题:', { userAnswer, correctAnswer, questionId: q.id });
-      currentScore = userAnswer === correctAnswer ? 100 : 0;
+      currentScore = userAnswer === correctAnswer ? questionScore : 0;
       
     } else if (q.type === 'multiple') {
       // 多选题：直接比较字母答案数组
@@ -143,10 +174,10 @@ export default function QuestionPractice() {
       // 简单比较：长度相同且内容相同
       const isCorrect = userAnswers.length === correctAnswers.length &&
         userAnswers.every((ans, index) => ans === correctAnswers[index]);
-      currentScore = isCorrect ? 100 : 0;
+      currentScore = isCorrect ? questionScore : 0;
       
     } else if (q.type === 'code') {
-      // 编程题：运行所有测试用例，只有全部通过才算正确
+      // 编程题：运行所有测试用例，根据通过率给分
       setLoading(true);
       let passedTests = 0;
       let totalTests = q.testCases.length;
@@ -156,8 +187,14 @@ export default function QuestionPractice() {
         if (isPassed) passedTests++;
       }
       
-      // 只有全部测试用例通过才算正确
-      currentScore = passedTests === totalTests ? 100 : 0;
+      // 根据通过率给分
+      if (passedTests === totalTests) {
+        currentScore = questionScore; // 全部通过，给满分
+      } else if (passedTests > 0) {
+        currentScore = Math.round((passedTests / totalTests) * questionScore * 0.5); // 部分通过，给50%分数
+      } else {
+        currentScore = Math.round(questionScore * 0.1); // 完全没有通过，给10%分数
+      }
       setLoading(false);
       
       // 显示测试结果
@@ -172,8 +209,49 @@ export default function QuestionPractice() {
     setScore(currentScore);
     setScores({ ...scores, [q.id]: currentScore });
     
+    // 保存答题记录
+    
+    if (currentStudent) {
+      try {
+        const record = await saveAnswerRecord(
+          currentStudent.username,
+          q.id,
+          { answer, code, lang },
+          currentScore
+        );
+        console.log('答题记录保存成功:', record);
+        
+        // 更新答题记录状态，以便立即反映在界面上
+        setAnswerRecords(prev => {
+          const newRecords = prev.filter(r => 
+            !(r.studentUsername === currentStudent.username && r.questionId === q.id)
+          );
+          return [...newRecords, record];
+        });
+      } catch (error) {
+        console.error('保存答题记录失败:', error);
+        message.error('保存答题记录失败: ' + error.message);
+      }
+    } else {
+      console.warn('当前学生信息为空，无法保存答题记录');
+    }
+    
     // 显示当前题目的结果
-    const resultMessage = currentScore === 100 ? '回答正确！' : '回答错误，请重新尝试。';
+    let isCorrect = false;
+    if (q.type === 'single') {
+      const userAnswer = answer ? answer.toUpperCase() : '';
+      const correctAnswer = q.answer[0];
+      isCorrect = userAnswer === correctAnswer;
+    } else if (q.type === 'multiple') {
+      const userAnswers = Array.isArray(answer) ? answer.map(ans => ans.toUpperCase()) : [];
+      const correctAnswers = q.answer;
+      isCorrect = userAnswers.length === correctAnswers.length &&
+        userAnswers.every((ans, index) => ans === correctAnswers[index]);
+    } else if (q.type === 'code') {
+      isCorrect = currentScore === questionScore;
+    }
+    
+    const resultMessage = isCorrect ? '回答正确！' : '回答错误，请重新尝试。';
     message.success(`当前题目：${resultMessage}`);
   };
 
@@ -237,18 +315,66 @@ export default function QuestionPractice() {
   };
 
   function getStatus(qid) {
-    // 获取当前题目的分数
-    const currentScore = scores[qid] || 0;
+    // 获取题目信息
+    const question = questions.find(q => q.id === qid);
+    if (!question) return '未做';
     
-    if (currentScore === 0) {
-      return '未做';
-    } else if (currentScore >= 100) {
-      return '做对';
-    } else if (currentScore > 0) {
-      return '部分正确';
-    } else {
-      return '做错';
+    // 检查持久化存储中的答题记录，只取最新的
+    const studentRecords = answerRecords
+      .filter(record => {
+        const recordQuestionId = String(record.questionId);
+        const currentQid = String(qid);
+        return record.studentUsername === currentStudent?.username && recordQuestionId === currentQid;
+      })
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    const studentRecord = studentRecords[0];
+    
+    // 如果有答题记录，检查答案正确性
+    if (studentRecord && studentRecord.answerData) {
+      const answerData = studentRecord.answerData;
+      
+      if (question.type === 'single') {
+        const userAnswer = answerData.answer ? answerData.answer.toUpperCase() : '';
+        const correctAnswer = question.answer[0];
+        return userAnswer === correctAnswer ? '做对' : '做错';
+      } else if (question.type === 'multiple') {
+        const userAnswers = Array.isArray(answerData.answer) ? 
+          answerData.answer.map(ans => ans.toUpperCase()) : [];
+        const correctAnswers = question.answer;
+        const isCorrect = userAnswers.length === correctAnswers.length &&
+          userAnswers.every((ans, index) => ans === correctAnswers[index]);
+        return isCorrect ? '做对' : '做错';
+      } else if (question.type === 'code') {
+        // 编程题基于分数判断
+        const questionScore = question.score || 100;
+        return studentRecord.score === questionScore ? '做对' : '做错';
+      }
     }
+    
+    // 检查内存中的答案（当前会话）
+    const currentAnswer = answers[qid];
+    if (currentAnswer) {
+      if (question.type === 'single') {
+        const userAnswer = currentAnswer.answer ? currentAnswer.answer.toUpperCase() : '';
+        const correctAnswer = question.answer[0];
+        return userAnswer === correctAnswer ? '做对' : '做错';
+      } else if (question.type === 'multiple') {
+        const userAnswers = Array.isArray(currentAnswer.answer) ? 
+          currentAnswer.answer.map(ans => ans.toUpperCase()) : [];
+        const correctAnswers = question.answer;
+        const isCorrect = userAnswers.length === correctAnswers.length &&
+          userAnswers.every((ans, index) => ans === correctAnswers[index]);
+        return isCorrect ? '做对' : '做错';
+      } else if (question.type === 'code') {
+        // 编程题基于分数判断
+        const currentScore = scores[qid] || 0;
+        const questionScore = question.score || 100;
+        return currentScore === questionScore ? '做对' : '做错';
+      }
+    }
+    
+    return '未做';
   }
 
   return (
@@ -295,6 +421,11 @@ export default function QuestionPractice() {
               { title: '题号', dataIndex: 'idx', key: 'idx', width: 60, render: (v, r) => <b style={{ color: r.active ? '#1677ff' : undefined }}>{v}</b> },
               { title: '类型', dataIndex: 'type', key: 'type', width: 80, render: (v, r) => <Tag color={r.typeColor}>{v}</Tag> },
               { title: '题目', dataIndex: 'title', key: 'title', render: (v, r) => <span style={{ color: r.active ? '#1677ff' : undefined, cursor: 'pointer' }} onClick={r.onClick}>{v}</span> },
+              { title: '分数', key: 'score', width: 80, render: (_, r) => {
+                const question = questions.find(q => q.id === r.key);
+                const questionScore = question?.score || 100;
+                return <Tag color="blue">{questionScore}分</Tag>;
+              }},
               { title: '状态', dataIndex: 'status', key: 'status', width: 80, render: (v, r) => <Tag color={r.color}>{v}</Tag> },
             ]}
             rowClassName={r => r.active ? 'ant-table-row-selected' : ''}
@@ -305,7 +436,9 @@ export default function QuestionPractice() {
       ) : (
         <>
           <Button onClick={() => setShowDetail(false)} style={{ marginBottom: 16 }}>返回题目列表</Button>
-          <div style={{ marginBottom: 16 }}><b>题目内容：</b> {q.question}</div>
+          <div style={{ marginBottom: 16 }}>
+            <div><b>题目内容：</b> {q.question}</div>
+          </div>
           {q.type === 'single' && (
             <Radio.Group onChange={e => handleAnswerChange(e.target.value)} value={answer}>
               {(Array.isArray(q.options) ? q.options : q.options.split(',')).map((opt, idx) => {

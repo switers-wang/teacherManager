@@ -73,6 +73,14 @@ export default function QuestionForm({ onAddQuestion }) {
       <Form key={type} form={form} layout="vertical" onFinish={onFinish} initialValues={{ type: 'single', options }} validateTrigger="onChange" onValuesChange={(changed, all) => { console.log('QuestionForm values:', all); }}>
         <Form.Item label="题目类型" name="type" rules={[{ required: true, message: '请选择题目类型' }]}><Select style={{ width: 120 }} onChange={handleTypeChange}><Option value="single">单选题</Option><Option value="multiple">多选题</Option><Option value="code">编程题</Option></Select></Form.Item>
         <Form.Item label="题干" name="question" rules={[{ required: true, message: '请输入题干' }]}><Input.TextArea rows={2} /></Form.Item>
+        <Form.Item 
+          label="题目分数" 
+          name="score" 
+          rules={[{ required: true, message: '请输入题目分数' }]}
+          initialValue={100}
+        >
+          <Input type="number" min={1} max={100} placeholder="请输入题目分数" />
+        </Form.Item>
         {(type === 'single' || type === 'multiple') && (
           <>
             <Form.Item label="选项" required>
