@@ -11,14 +11,22 @@ export default function Login() {
 
   const onFinish = async (values) => {
     setLoading(true);
-    const user = await loginUser(values);
-    setLoading(false);
-    if (user) {
-      localStorage.setItem('tm_user', JSON.stringify(user));
-      message.success('登录成功');
-      navigate(user.role === 'teacher' ? '/teacher' : '/student', { replace: true });
-    } else {
-      message.error('账号或密码错误');
+    try {
+      const user = await loginUser(values);
+      setLoading(false);
+      if (user) {
+        localStorage.setItem('tm_user', JSON.stringify(user));
+        message.success('登录成功');
+        // 触发自定义事件，通知App组件更新用户状态
+        window.dispatchEvent(new Event('userLogin'));
+        // 使用 replace 避免浏览器历史记录问题
+        navigate(user.role === 'teacher' ? '/teacher' : '/student', { replace: true });
+      } else {
+        message.error('账号或密码错误');
+      }
+    } catch (error) {
+      setLoading(false);
+      message.error('登录失败：' + error.message);
     }
   };
 

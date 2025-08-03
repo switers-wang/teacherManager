@@ -29,7 +29,7 @@ export default function TeacherDashboard() {
       onChange={setActiveKey}
       defaultActiveKey="1"
       items={[
-        { key: '1', label: '题目管理', children: <QuestionManager questions={questions} onDelete={refreshQuestions} /> },
+        { key: '1', label: '题目管理', children: <QuestionManager questions={questions} onDelete={refreshQuestions} onUpdate={refreshQuestions} /> },
         { key: '2', label: '题目录入', children: <QuestionForm onAddQuestion={handleAddQuestion} /> },
       ]}
     />

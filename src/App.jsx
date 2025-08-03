@@ -21,13 +21,31 @@ export default function App() {
       const u = localStorage.getItem('tm_user');
       setUser(u ? JSON.parse(u) : null);
     };
+    
+    // 监听 localStorage 变化
     window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    
+    // 监听自定义事件，用于登录成功后的状态更新
+    const onUserChange = () => {
+      const u = localStorage.getItem('tm_user');
+      setUser(u ? JSON.parse(u) : null);
+    };
+    
+    window.addEventListener('userLogin', onUserChange);
+    window.addEventListener('userLogout', onUserChange);
+    
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('userLogin', onUserChange);
+      window.removeEventListener('userLogout', onUserChange);
+    };
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('tm_user');
     setUser(null);
+    // 触发自定义事件
+    window.dispatchEvent(new Event('userLogout'));
   };
 
   return (
@@ -60,11 +78,35 @@ export default function App() {
         </Header>
         <Content style={{ padding: 24 }}>
           <Routes>
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={
+              user ? (
+                <Navigate to={user.role === 'teacher' ? '/teacher' : '/student'} replace />
+              ) : (
+                <Login />
+              )
+            } />
             <Route path="/register" element={<Register />} />
-            <Route path="/" element={user ? <Navigate to={user.role === 'teacher' ? '/teacher' : '/student'} /> : <Navigate to="/login" />} />
-            <Route path="/teacher/*" element={user && user.role === 'teacher' ? <TeacherDashboard /> : <Navigate to="/login" />} />
-            <Route path="/student/*" element={user && user.role === 'student' ? <StudentDashboard /> : <Navigate to="/login" />} />
+            <Route path="/" element={
+              user ? (
+                <Navigate to={user.role === 'teacher' ? '/teacher' : '/student'} replace />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            } />
+            <Route path="/teacher/*" element={
+              user && user.role === 'teacher' ? (
+                <TeacherDashboard />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            } />
+            <Route path="/student/*" element={
+              user && user.role === 'student' ? (
+                <StudentDashboard />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            } />
           </Routes>
         </Content>
       </Layout>
