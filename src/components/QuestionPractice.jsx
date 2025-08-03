@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Button, Radio, Checkbox, message, Input, Select, Space, Progress, Table, Tag } from 'antd';
-import { getQuestions, saveStudentRecord, getStudentRecord } from '../utils/storage';
+import { getQuestions } from '../utils/storage';
 import CodeEditor from './CodeEditor';
 
 const { Option } = Select;
@@ -15,14 +15,12 @@ export default function QuestionPractice() {
   const [loading, setLoading] = useState(false);
   const [testLoading, setTestLoading] = useState(false);
   const [score, setScore] = useState(0);
-  const [record, setRecord] = useState([]);
   const [testResult, setTestResult] = useState(null);
   const [scores, setScores] = useState({}); // { [qid]: 分数 }
   const [showDetail, setShowDetail] = useState(false);
 
   useEffect(() => {
     getQuestions().then(qs => setQuestions(qs));
-    getStudentRecord().then(setRecord);
   }, []);
 
   useEffect(() => {
@@ -170,10 +168,6 @@ export default function QuestionPractice() {
       }
     }
     
-    // 保存当前题目的得分
-    await saveStudentRecord({ qid: q.id, score: currentScore });
-    setRecord(await getStudentRecord());
-    
     // 更新当前题目的分数显示
     setScore(currentScore);
     setScores({ ...scores, [q.id]: currentScore });
@@ -243,19 +237,14 @@ export default function QuestionPractice() {
   };
 
   function getStatus(qid) {
-    // 获取指定题目的记录
-    const questionRecords = record.filter(r => r.qid === qid);
+    // 获取当前题目的分数
+    const currentScore = scores[qid] || 0;
     
-    if (!questionRecords.length) {
+    if (currentScore === 0) {
       return '未做';
-    }
-    
-    // 获取该题目的最高分
-    const maxScore = Math.max(...questionRecords.map(r => r.score));
-    
-    if (maxScore >= 100) {
+    } else if (currentScore >= 100) {
       return '做对';
-    } else if (maxScore > 0) {
+    } else if (currentScore > 0) {
       return '部分正确';
     } else {
       return '做错';

@@ -1,7 +1,6 @@
 import { get, set } from 'idb-keyval';
 
 const QUESTION_KEY = 'tm_questions';
-const RECORD_KEY = 'tm_student_record';
 const USER_KEY = 'tm_users';
 
 export async function getQuestions() {
@@ -82,15 +81,7 @@ export async function updateQuestion(id, updatedQuestion) {
   console.log('题目更新成功:', { id: updatedQuestion.id, type: updatedQuestion.type, answer: updatedQuestion.answer });
 }
 
-export async function getStudentRecord() {
-  return (await get(RECORD_KEY)) || [];
-}
 
-export async function saveStudentRecord({ qid, score }) {
-  const rec = await getStudentRecord();
-  rec.push({ qid, score, time: Date.now() });
-  await set(RECORD_KEY, rec);
-}
 
 export async function getUsers() {
   return (await get(USER_KEY)) || [];
