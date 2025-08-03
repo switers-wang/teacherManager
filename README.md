@@ -1,7 +1,17 @@
 # teacherManager
 
 题目管理系统（React + Vite）
+# 环境安装
+https://nodejs.org/zh-cn/download 点击mac安装
+或者在命令行执行 brew install node
 
+下载安装完之后 check一下是否安装成功，如下
+确保在命令行
+```
+node -v
+npm -v
+```
+都已安装，即可本地启动
 ## 启动
 
 ```bash
