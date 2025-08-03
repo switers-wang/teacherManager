@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Button } from 'antd';
+import { Layout, Menu, Button, Space } from 'antd';
+import { SwapOutlined } from '@ant-design/icons';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import TeacherDashboard from './pages/TeacherDashboard';
 import StudentDashboard from './pages/StudentDashboard';
@@ -48,6 +49,16 @@ export default function App() {
     window.dispatchEvent(new Event('userLogout'));
   };
 
+  const handleRoleChange = () => {
+    if (user) {
+      // 清除当前用户信息，需要重新登录
+      localStorage.removeItem('tm_user');
+      setUser(null);
+      // 触发自定义事件
+      window.dispatchEvent(new Event('userLogout'));
+    }
+  };
+
   return (
     <Router>
       <Layout style={{ minHeight: '100vh' }}>
@@ -69,10 +80,17 @@ export default function App() {
           </Menu>
           <div>
             {user ? (
-              <>
-                <span style={{ color: '#fff', marginRight: 8 }}>当前用户: {user.name || user.username}（{user.role === 'teacher' ? '教师' : '学生'}）</span>
-                <Button onClick={handleLogout}>退出登录</Button>
-              </>
+              <Space>
+                <span style={{ color: '#fff' }}>当前用户: {user.name || user.username}（{user.role === 'teacher' ? '教师' : '学生'}）</span>
+                <Button 
+                  icon={<SwapOutlined />}
+                  size="small"
+                  onClick={handleRoleChange}
+                >
+                  切换角色
+                </Button>
+                <Button onClick={handleLogout} size="small">退出登录</Button>
+              </Space>
             ) : null}
           </div>
         </Header>
